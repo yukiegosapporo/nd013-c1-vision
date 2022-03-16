@@ -158,3 +158,156 @@ This section should detail the results of the reference experiment. It should in
 
 #### Improve on the reference
 This section should highlight the different strategies you adopted to improve your model. It should contain relevant figures and details of your findings.
+
+
+# Writeup
+## Project overview
+
+In this project, you'll find code to create a convolutional neural network to detect and classify objects using data from Waymo. For this project, we will be using data from the [Waymo Open dataset](https://waymo.com/open/). The files can be downloaded directly from the website as tar files or from the [Google Cloud Bucket](https://console.cloud.google.com/storage/browser/waymo_open_dataset_v_1_2_0_individual_files/) as individual tf records.
+
+## Dataset
+
+### Dataset analysis
+
+The data provided in the course is organized in `/home/workspace/data/waymo/training_and_validation` where we can initially see 97 tfrecord files. 
+Here we can observe random extraction of image data, included objects and their bounding boxes.  
+
+![output0](./images/output0.png)
+![output1](./images/output1.png)
+![output2](./images/output2.png)
+![output3](./images/output3.png)
+![output4](./images/output4.png)
+![output5](./images/output5.png)
+![output6](./images/output6.png)
+![output7](./images/output7.png)
+![output8](./images/output8.png)
+
+As we see, we can see quite many cars detected compared to pedestrians.  In this small extraction, we can't see bikes which indicates that we might have inbalanced object class distribution.  
+
+Indeed, here is an actual aggregation of the classes in the dataset.  
+- **car**: 540043 (76%)
+- **pedestrian**: 161468 (22%)
+- **cyclist**: 4182 (less than 1%)
+
+Next, we can analyse how many objects are included in a image. We can focus on the most common objects of cars.  Here is a histogram of the number of cars in an image.  
+
+![cars_in_image](./images/cars_in_image.png)
+
+We can see there's not much of specific pattern but most of the values lie under 40.  
+
+### Cross validation
+
+The goal of our ML algorithm is to be deployed in a production environment. But before we can deploy such algorithms, we need to be sure that it will perform well in any environments it will encounter. In other words, we want to evaluate the generalization ability of our model.  
+Out of many available available cross validation methods exist, I adoped a simple training, test, validation split because LOO (Leave One Out) or k-fold cross validation won't fit for out case due to computational expense of CNN.  
+
+In the `split` function found in `create_split.py`, you can see training, test and validation split ratio as
+- training: 75%
+- test: 15%
+- validation: 10%
+
+The results of this split is found in my workspace  
+- /home/workspace/data/train: 72 tfrecords
+- /home/workspace/data/train: 15 tfrecords
+- /home/workspace/data/train: 10 tfrecords
+
+## Training
+
+As given in the course, I have run a couple of experiemnts where `/home/workspace/training` is the first experiment based on `pipeline_new.config` obtained by 
+```
+python edit_config.py \
+    --train_dir /home/workspace/data/train/ \
+    --eval_dir /home/workspace/data/val/ \
+    --batch_size 4 \
+    --checkpoint ./training/pretrained-models/ssd_resnet50_v1_fpn_640x640_coco17_tpu-8/checkpoint/ckpt-0 \
+    --label_map label_map.pbtxt
+```
+
+and `/home/workspace/training2` contains records and config based on my edits after observing the first trial which I'll address in detail in the `Improve on the reference` chapter.  
+
+### Reference experiment
+
+Here you see the results of the first trial given by Tensorboard.  
+
+![training](./images/training.png)
+
+As the course describes as "Most likely, this initial experiment did not yield optimal results", even though regularization loss decreases after a heap, classification loss didn't decrease at all.  
+
+### Improve on the reference
+
+After I checked data argumentation options available in [the provided proto file](https://github.com/tensorflow/models/blob/master/research/object_detection/protos/preprocessor.proto) particularly
+```
+message PreprocessingStep {
+  oneof preprocessing_step {
+    NormalizeImage normalize_image = 1;
+    RandomHorizontalFlip random_horizontal_flip = 2;
+    RandomPixelValueScale random_pixel_value_scale = 3;
+    RandomImageScale random_image_scale = 4;
+    RandomRGBtoGray random_rgb_to_gray = 5;
+    RandomAdjustBrightness random_adjust_brightness = 6;
+    RandomAdjustContrast random_adjust_contrast = 7;
+    RandomAdjustHue random_adjust_hue = 8;
+    RandomAdjustSaturation random_adjust_saturation = 9;
+    RandomDistortColor random_distort_color = 10;
+    RandomJitterBoxes random_jitter_boxes = 11;
+    RandomCropImage random_crop_image = 12;
+    RandomPadImage random_pad_image = 13;
+    RandomCropPadImage random_crop_pad_image = 14;
+    RandomCropToAspectRatio random_crop_to_aspect_ratio = 15;
+    RandomBlackPatches random_black_patches = 16;
+    RandomResizeMethod random_resize_method = 17;
+    ScaleBoxesToPixelCoordinates scale_boxes_to_pixel_coordinates = 18;
+    ResizeImage resize_image = 19;
+    SubtractChannelMean subtract_channel_mean = 20;
+    SSDRandomCrop ssd_random_crop = 21;
+    SSDRandomCropPad ssd_random_crop_pad = 22;
+    SSDRandomCropFixedAspectRatio ssd_random_crop_fixed_aspect_ratio = 23;
+    SSDRandomCropPadFixedAspectRatio ssd_random_crop_pad_fixed_aspect_ratio =
+        24;
+    RandomVerticalFlip random_vertical_flip = 25;
+    RandomRotation90 random_rotation90 = 26;
+    RGBtoGray rgb_to_gray = 27;
+    ConvertClassLogitsToSoftmax convert_class_logits_to_softmax = 28;
+    RandomAbsolutePadImage random_absolute_pad_image = 29;
+    RandomSelfConcatImage random_self_concat_image = 30;
+    AutoAugmentImage autoaugment_image = 31;
+    DropLabelProbabilistically drop_label_probabilistically = 32;
+    RemapLabels remap_labels = 33;
+    RandomJpegQuality random_jpeg_quality = 34;
+    RandomDownscaleToTargetPixels random_downscale_to_target_pixels = 35;
+    RandomPatchGaussian random_patch_gaussian = 36;
+    RandomSquareCropByScale random_square_crop_by_scale = 37;
+    RandomScaleCropAndPadToSquare random_scale_crop_and_pad_to_square = 38;
+    AdjustGamma adjust_gamma = 39;
+  }
+}
+```
+
+,
+given our dataset contains dart and/or blue images  
+![output3](./images/output3.png)
+![output4](./images/output4.png)
+
+I decided to include more gray scale and adjust contrast.  
+The edited `pipeline_new.config` is found in `/home/workspace/training2/reference/pipeline_new.config` particularll the additional part is
+
+```
+  data_augmentation_options {
+    random_rgb_to_gray {
+    probability: 0.3
+    }
+  }
+  data_augmentation_options {
+    random_adjust_contrast {
+    min_delta: 0.5
+    max_delta: 1.0
+    }
+  }
+```
+
+After the training and evaluation steps, we can observe the results again using Tensorboard
+
+
+![training2](./images/training2.png)
+
+Now it's obvious that classification loss decreases indicating out training process works better.
+

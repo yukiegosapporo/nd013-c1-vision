@@ -31,7 +31,6 @@ def split(data_dir: str) -> None:
     for k, values in train_test_vals.items():
         os.makedirs(os.path.join(data_dir, k), exist_ok=True)
         for v in values:
-            # shutil.move(v, os.path.join(data_dir, k))
             os.system(f"mv {v} {os.path.join(data_dir, k)}")
 
 
@@ -39,7 +38,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Split data into training / validation / testing"
     )
-    # parser.add_argument("--temp_dir", required=True, help="source data directory")
     parser.add_argument(
         "--data_dir",
         required=True,
