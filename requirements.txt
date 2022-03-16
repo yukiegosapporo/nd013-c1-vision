@@ -1,0 +1,10 @@
+absl==0.0
+matplotlib==3.5.1
+numpy==1.22.3
+object_detection==0.0.3
+Pillow==9.0.1
+protobuf==3.19.4
+psutil==5.9.0
+ray==1.11.0
+tensorflow==2.8.0
+waymo_open_dataset==1.0.1
