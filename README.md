@@ -183,6 +183,7 @@ Here we can observe random extraction of image data, included objects and their 
 ![output8](./images/output8.png)
 
 As we see, we can see quite many cars detected compared to pedestrians.  In this small extraction, we can't see bikes which indicates that we might have inbalanced object class distribution.  
+On top of the class variation, we can see images variability including several weather conditions and several brightness/contrast patterns.  
 
 Indeed, here is an actual aggregation of the classes in the dataset.  
 - **car**: 540043 (76%)
